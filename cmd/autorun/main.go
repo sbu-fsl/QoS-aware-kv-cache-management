@@ -86,7 +86,7 @@ func main() {
 	// loop over operations and execute
 	for i, op := range ops {
 		ids, err := parseIDs(op.Blocks)
-		if err != nil {
+		if err != nil && op.Op != "purge" { // purge doesn't require blocks
 			log.Fatalf("[Err] operation %d: invalid blocks %q: %v\n", i+1, op.Blocks, err)
 		}
 
