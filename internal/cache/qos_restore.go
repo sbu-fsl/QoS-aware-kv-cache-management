@@ -69,43 +69,21 @@ func (e *Engine) QoSRestore(blockIDs []int) ([]RestoreResult, time.Duration) {
 		return e.finalise(results)
 	}
 
-	// --- phase 1b: pre-recompute blocks whose best tier is slower than compute ---
-	// If the fastest available tier for a block is slower than recompute, recomputing
-	// is always better regardless of flow allocation.
-	var flowCached []int
-	for _, idx := range cached {
-		bestSpeed := 0.0
-		for _, t := range tierHits[idx] {
-			if t.Speed > bestSpeed {
-				bestSpeed = t.Speed
-			}
-		}
+	// All cached blocks are candidates for the flow network — the max-flow algorithm
+	// decides the optimal split between recompute and tier restore based on throughput.
+	// Per-block heuristics (e.g. "this tier is slower than compute") are wrong here
+	// because tier restore is parallel per lane: a slow tier serving many blocks in
+	// parallel can still beat sequential recompute for the same blocks.
+	recomputeCap := e.cfg.CacheEngine.MaxRecomputeBlocks // -1 = unlimited
+	recomputeUsed := 0
 
-		if bestSpeed < computeSpeed {
-			// recompute is faster than the best available tier
-			results[idx] = RestoreResult{
-				BlockID:         blockIDs[idx],
-				Computed:        true,
-				ForceRecomputed: true,
-				RestoreTime:     computeTimePerBlock,
-			}
-		} else {
-			flowCached = append(flowCached, idx)
-		}
-	}
+	flowCached := cached
 
-	// all cached blocks are slower-than-compute; recompute them all
-	if len(flowCached) == 0 {
-		return e.finalise(results)
-	}
-
-	// budget uses only tiers faster than or equal to compute; slower tiers are
-	// pre-recomputed above so they don't participate in the flow balancing.
+	// Optimal budget: the minimum time T* such that compute and all tiers together
+	// can handle all flowCached blocks. T* = len(flowCached) / totalThroughput.
 	totalThroughput := computeSpeed
 	for _, tier := range e.tiers {
-		if tier.Speed >= computeSpeed {
-			totalThroughput += tier.Speed
-		}
+		totalThroughput += tier.Speed
 	}
 
 	budget := float64(len(flowCached)) / totalThroughput
@@ -190,10 +168,13 @@ func (e *Engine) QoSRestore(blockIDs []int) ([]RestoreResult, time.Duration) {
 		tiers []*storage.Tier
 	}
 
-	// Energy-efficiency cap: limit how many cached blocks may be force-recomputed.
-	// Blocks beyond the cap are sent back to tier restore instead.
-	if cap := e.cfg.CacheEngine.MaxRecomputeBlocks; cap > -1 && computeFlow > cap {
-		computeFlow = cap
+	// Energy-efficiency cap: clamp flow-assigned recomputes to the remaining budget
+	// after phase 1b already consumed some of it.
+	if recomputeCap > -1 {
+		remaining := max(recomputeCap-recomputeUsed, 0)
+		if computeFlow > remaining {
+			computeFlow = remaining
+		}
 	}
 
 	shouldCompute := computeFlow
@@ -375,7 +356,7 @@ func edmondsKarp(cap [][]int, source, sink, n int) int {
 		for len(queue) > 0 && parent[sink] == -1 {
 			u := queue[0]
 			queue = queue[1:]
-			for v := 0; v < n; v++ {
+			for v := range n {
 				if parent[v] == -1 && cap[u][v] > 0 {
 					parent[v] = u
 					queue = append(queue, v)
