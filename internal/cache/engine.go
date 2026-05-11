@@ -217,3 +217,15 @@ func (e *Engine) Status() []TierStatus {
 
 	return out
 }
+
+// Purge clears all tiers of their blocks.
+func (e *Engine) Purge() error {
+	for _, tier := range e.tiers {
+		err := tier.Purge()
+		if err != nil {
+			return fmt.Errorf("purge tier %s: %w", tier.Name, err)
+		}
+	}
+
+	return nil
+}
