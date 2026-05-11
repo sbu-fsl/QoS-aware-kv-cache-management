@@ -79,14 +79,56 @@ func (e *Engine) QoSRestore(blockIDs []int) ([]RestoreResult, time.Duration) {
 
 	flowCached := cached
 
-	// Optimal budget: the minimum time T* such that compute and all tiers together
-	// can handle all flowCached blocks. T* = len(flowCached) / totalThroughput.
-	totalThroughput := computeSpeed
-	for _, tier := range e.tiers {
-		totalThroughput += tier.Speed
+	// count how many flowCached blocks each tier actually has
+	tierSliceIndex := make(map[string]int, len(e.tiers))
+	for i, t := range e.tiers {
+		tierSliceIndex[t.Name] = i
+	}
+	tierSupplyCount := make([]int, len(e.tiers))
+	for _, idx := range flowCached {
+		seen := make(map[int]bool)
+		for _, t := range tierHits[idx] {
+			ti := tierSliceIndex[t.Name]
+			if !seen[ti] {
+				seen[ti] = true
+				tierSupplyCount[ti]++
+			}
+		}
 	}
 
-	budget := float64(len(flowCached)) / totalThroughput
+	// Compute the optimal budget T* iteratively.
+	// A tier is "saturated" if speed×T* exceeds its actual block supply — it can only
+	// contribute its supply, not its full throughput. Remove saturated tiers from the
+	// active set, subtract their fixed contribution, and recompute T* until stable.
+	// This gives the true minimum makespan when some tiers have limited block counts.
+	remaining := float64(len(flowCached))
+	activeThroughput := computeSpeed
+	for _, tier := range e.tiers {
+		activeThroughput += tier.Speed
+	}
+
+	saturated := make([]bool, len(e.tiers))
+	for {
+		budget := remaining / activeThroughput
+		changed := false
+		for i, t := range e.tiers {
+			if saturated[i] {
+				continue
+			}
+			if t.Speed*budget > float64(tierSupplyCount[i]) {
+				// this tier runs out before T* — fix its contribution and remove it
+				saturated[i] = true
+				remaining -= float64(tierSupplyCount[i])
+				activeThroughput -= t.Speed
+				changed = true
+			}
+		}
+		if !changed {
+			break
+		}
+	}
+
+	budget := remaining / activeThroughput
 
 	// --- phase 2: build flow network with compute as a node ---
 	//
