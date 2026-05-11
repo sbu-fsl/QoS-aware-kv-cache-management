@@ -126,6 +126,12 @@ func runCLI(engine *cache.Engine) {
 			results, overall := engine.RestoreAuto(ids)
 
 			fmt.Print(report.Restore(results, overall))
+		case "purge":
+			if err := engine.Purge(); err != nil {
+				fmt.Println("error:", err)
+			} else {
+				fmt.Println("cache purged successfully")
+			}
 		case "qos-restore":
 			ids, err := parseIDs(args)
 			if err != nil {

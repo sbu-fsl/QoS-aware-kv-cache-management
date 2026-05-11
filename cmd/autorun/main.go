@@ -113,8 +113,7 @@ func main() {
 			fmt.Printf("[Op %d] restore %v — %.2f blocks/s  (overall: %s)\n", i+1, fmtList(ids), speed, fmtDur(overall))
 
 		case "purge":
-			err := engine.Purge()
-			if err != nil {
+			if err := engine.Purge(); err != nil {
 				log.Fatalf("[Err] operation %d: purge failed: %v\n", i+1, err)
 			}
 			fmt.Fprintf(outFile, "Purged blocks.\n")
