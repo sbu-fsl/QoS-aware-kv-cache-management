@@ -1,0 +1,18 @@
+# System and IDE files
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Executables
+bin/
+main
+
+# Data files
+data/
+cases/
+out*.txt
+
+# Local configuration files
+cmd.yaml
+config.yaml

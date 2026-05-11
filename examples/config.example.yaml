@@ -1,0 +1,19 @@
+inference_engine:
+  block_size: 16        # tokens per block
+  compute_speed: 50.0    # blocks per second (simulated compute for a missing block)
+
+cache_engine:
+  restore_mode: "qos"        # greedy or qos
+  max_recompute_blocks: -1   # cap on how many cached blocks may be force-recomputed; -1 for no cap
+  tiers:
+    - name: VRAM
+      restore_speed: 100.0   # blocks per second
+      capacity: 10           # max blocks
+
+    - name: DRAM
+      restore_speed: 20.0    # blocks per second
+      capacity: 30           # max blocks
+
+    - name: Disk
+      restore_speed: 5.0     # blocks per second
+      capacity: 100          # max blocks

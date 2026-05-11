@@ -1,0 +1,12 @@
+operations:
+  - op: store
+    blocks: "1-100"
+
+  - op: restore
+    blocks: "70-100"
+
+  - op: store
+    blocks: "101-150"
+
+  - op: restore
+    blocks: "70-100"
