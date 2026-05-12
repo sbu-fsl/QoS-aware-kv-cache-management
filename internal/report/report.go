@@ -10,27 +10,29 @@ import (
 
 // Store generates a report for store operations,
 // showing which blocks were stored and any evictions that occurred.
-func Store(results []cache.StoreResult) string {
+func Store(results []cache.StoreResult, verbose bool) string {
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "STORE — %d block(s)\n", len(results))
 	fmt.Fprintf(&b, "%-10s  %s\n", "Block", "Evictions")
 	fmt.Fprintf(&b, "%s\n", strings.Repeat("-", 50))
 
-	for _, r := range results {
-		evictions := []string{}
-		for tier, evicted := range r.Evicted {
-			if evicted >= 0 {
-				evictions = append(evictions, fmt.Sprintf("%s→evicted #%d", tier, evicted))
+	if verbose {
+		for _, r := range results {
+			evictions := []string{}
+			for tier, evicted := range r.Evicted {
+				if evicted >= 0 {
+					evictions = append(evictions, fmt.Sprintf("%s→evicted #%d", tier, evicted))
+				}
 			}
-		}
 
-		ev := "none"
-		if len(evictions) > 0 {
-			ev = strings.Join(evictions, ", ")
-		}
+			ev := "none"
+			if len(evictions) > 0 {
+				ev = strings.Join(evictions, ", ")
+			}
 
-		fmt.Fprintf(&b, "  #%-8d  %s\n", r.BlockID, ev)
+			fmt.Fprintf(&b, "  #%-8d  %s\n", r.BlockID, ev)
+		}
 	}
 
 	return b.String()
@@ -74,15 +76,22 @@ func Lookup(results []cache.LookupResult) string {
 // Restore generates a report for restore operations, showing which blocks were restored,
 // whether they were restored from cache or computed, the time taken for each operation,
 // and a summary of the overall restore process.
-func Restore(results []cache.RestoreResult, overall time.Duration) string {
+func Restore(results []cache.RestoreResult, overall time.Duration, verbose bool) string {
 	var b strings.Builder
 
+	tierCounts := make(map[string]int)
 	computed, restored := 0, 0
 	for _, r := range results {
 		if r.Computed {
 			computed++
 		} else {
 			restored++
+
+			if _, ok := tierCounts[r.TierName]; !ok {
+				tierCounts[r.TierName] = 0
+			}
+
+			tierCounts[r.TierName]++
 		}
 	}
 
@@ -90,21 +99,22 @@ func Restore(results []cache.RestoreResult, overall time.Duration) string {
 	fmt.Fprintf(&b, "%-10s  %-12s  %-10s  %s\n", "Block", "Source", "Time", "Note")
 	fmt.Fprintf(&b, "%s\n", strings.Repeat("-", 60))
 
-	for _, r := range results {
-		source := r.TierName
+	if verbose {
+		for _, r := range results {
+			source := r.TierName
+			var note string
+			if r.ForceRecomputed {
+				source = "RECOMPUTE"
+				note = "found — but decided to recompute"
+			} else if r.Computed {
+				source = "COMPUTE"
+				note = "not found — computed and auto-stored"
+			} else {
+				note = fmt.Sprintf("restored from %s", r.TierName)
+			}
 
-		var note string
-		if r.ForceRecomputed {
-			source = "RECOMPUTE"
-			note = "found — but decided to recompute"
-		} else if r.Computed {
-			source = "COMPUTE"
-			note = "not found — computed and auto-stored"
-		} else {
-			note = fmt.Sprintf("restored from %s", r.TierName)
+			fmt.Fprintf(&b, "  #%-8d  %-12s  %-10s  %s\n", r.BlockID, source, fmtDur(r.RestoreTime), note)
 		}
-
-		fmt.Fprintf(&b, "  #%-8d  %-12s  %-10s  %s\n", r.BlockID, source, fmtDur(r.RestoreTime), note)
 	}
 
 	fmt.Fprintf(&b, "%s\n", strings.Repeat("-", 60))
@@ -127,14 +137,14 @@ func Restore(results []cache.RestoreResult, overall time.Duration) string {
 	}
 
 	for tierName, d := range tierDur {
-		fmt.Fprintf(&b, "  Lane %-14s %s\n", tierName+":", fmtDur(d))
+		fmt.Fprintf(&b, "Lane %-14s %s (distribution: %d block(s))\n", tierName+":", fmtDur(d), tierCounts[tierName])
 	}
 
 	if totalCompute > 0 {
-		fmt.Fprintf(&b, "  Sequential compute:   %s  (%d block(s))\n", fmtDur(totalCompute), computed)
+		fmt.Fprintf(&b, "Sequential compute:   %s  (%d block(s))\n", fmtDur(totalCompute), computed)
 	}
 
-	fmt.Fprintf(&b, "  Overall time:         %s  max(parallel restore %s, compute %s)\n", fmtDur(overall), fmtDur(maxRestore), fmtDur(totalCompute))
+	fmt.Fprintf(&b, "Overall time:         %s  max(parallel restore %s, compute %s)\n", fmtDur(overall), fmtDur(maxRestore), fmtDur(totalCompute))
 
 	return b.String()
 }

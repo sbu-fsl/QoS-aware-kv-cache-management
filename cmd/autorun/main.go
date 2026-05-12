@@ -31,10 +31,11 @@ type CmdFile struct {
 func main() {
 	// command-line flags
 	var (
-		flagCfg  = flag.String("config", "config.yaml", "path to config file")
-		flagData = flag.String("data", "data", "directory for tier cache files")
-		flagCmd  = flag.String("cmd", "cmd.yaml", "path to operations file")
-		flagOut  = flag.String("out", "out.txt", "path to output report file")
+		flagCfg     = flag.String("config", "config.yaml", "path to config file")
+		flagData    = flag.String("data", "data", "directory for tier cache files")
+		flagCmd     = flag.String("cmd", "cmd.yaml", "path to operations file")
+		flagOut     = flag.String("out", "out.txt", "path to output report file")
+		flagVerbose = flag.Bool("verbose", false, "enable verbose logging")
 	)
 
 	// parse flags
@@ -96,7 +97,7 @@ func main() {
 		switch strings.ToLower(op.Op) {
 		case "store":
 			results := engine.Store(ids)
-			text := report.Store(results)
+			text := report.Store(results, *flagVerbose)
 			fmt.Fprint(outFile, text)
 
 			// speed line to console only
@@ -104,7 +105,7 @@ func main() {
 
 		case "restore":
 			results, overall := engine.RestoreAuto(ids)
-			text := report.Restore(results, overall)
+			text := report.Restore(results, overall, *flagVerbose)
 			fmt.Fprint(outFile, text)
 
 			// speed line to console only

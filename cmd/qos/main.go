@@ -70,7 +70,7 @@ func main() {
 func runCLI(engine *cache.Engine) {
 	fmt.Println("QoS-aware KV Cache Simulator  —  type 'help' for commands")
 
-	// create a scanner instancr
+	// create a scanner instance
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("> ")
@@ -105,7 +105,7 @@ func runCLI(engine *cache.Engine) {
 
 			results := engine.Store(ids)
 
-			fmt.Print(report.Store(results))
+			fmt.Print(report.Store(results, true))
 		case "lookup":
 			ids, err := parseIDs(args)
 			if err != nil {
@@ -125,7 +125,7 @@ func runCLI(engine *cache.Engine) {
 
 			results, overall := engine.RestoreAuto(ids)
 
-			fmt.Print(report.Restore(results, overall))
+			fmt.Print(report.Restore(results, overall, true))
 		case "purge":
 			if err := engine.Purge(); err != nil {
 				fmt.Println("error:", err)
@@ -141,7 +141,7 @@ func runCLI(engine *cache.Engine) {
 
 			results, overall := engine.QoSRestore(ids)
 
-			fmt.Print(report.Restore(results, overall))
+			fmt.Print(report.Restore(results, overall, true))
 		case "status":
 			fmt.Print(report.Status(engine.Status()))
 		case "exit", "quit":
