@@ -27,7 +27,7 @@ type AutoRunCMD struct {
 func (c *AutoRunCMD) Command() *cobra.Command {
 	instance := &cobra.Command{
 		Use:   "autorun",
-		Short: "Automated QoS-aware KV Cache Management (CLI)",
+		Short: "Automated QoS-aware KV Cache Management Runner",
 		Long:  "Run a sequence of cache operations defined in a cmd.yaml file for testing and demonstration.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c.main()
