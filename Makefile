@@ -1,35 +1,30 @@
 MODULE  := github.com/sbu-fsl/qos-aware-restoration
 BIN_DIR := bin
-QOS_BIN := $(BIN_DIR)/qos
-RUN_BIN := $(BIN_DIR)/autorun
+APP_BIN := $(BIN_DIR)/cli
 
 CONFIG   ?= config.yaml
 DATA     ?= data
 CMD_YAML ?= cmd.yaml
 OUT      ?= out.txt
 
-.PHONY: all build build-qos build-autorun run autorun clean test vet fmt help
+.PHONY: all build build-go run autorun clean test vet fmt help
 
 all: build
 
 ## build: compile both binaries
-build: build-qos build-autorun
+build: build-go
 
-build-qos:
+build-go:
 	@mkdir -p $(BIN_DIR)
-	go build -o $(QOS_BIN) ./cmd/qos
-
-build-autorun:
-	@mkdir -p $(BIN_DIR)
-	go build -o $(RUN_BIN) ./cmd/autorun
+	go build -o $(APP_BIN) .
 
 ## run: start the interactive QoS CLI
-run: build-qos
-	$(QOS_BIN) -config $(CONFIG) -data $(DATA)
+run: build-go
+	$(APP_BIN) qos --config $(CONFIG) --data $(DATA)
 
 ## autorun: execute operations from cmd.yaml and write full report to out.txt
-autorun: build-autorun
-	$(RUN_BIN) -config $(CONFIG) -data $(DATA) -cmd $(CMD_YAML) -out $(OUT)
+autorun: build-go
+	$(APP_BIN) autorun --config $(CONFIG) --data $(DATA) --cmd $(CMD_YAML) --out $(OUT)
 
 ## test: run all tests
 test:
