@@ -1,5 +1,7 @@
 # QoS-aware KV Cache Management
 
+![GitHub License](https://img.shields.io/github/license/sbu-fsl/QoS-aware-kv-cache-management)
+
 A simulated heterogeneous multi-tier KV cache system with a CLI-based inference engine that stores, looks up, and restores blocks across storage tiers.
 This project aims to replicate the real-world distribution of KV caches across storage tiers during LLM inference.
 The project supports applying QoS-aware cache management policies with two SLOs. The default SLO targets lower TTFT, resulting in reduced queue delays and lower end-to-end latency. However, by setting a cap on computed blocks, an energy-efficiency-oriented SLO can also be enforced.
@@ -71,6 +73,9 @@ cache_engine:
 make build        # compile both binaries into bin/
 make run          # interactive CLI only
 make autorun      # batch runner only
+
+cp examples/config.example.yaml config.yaml
+cp examples/cmd.example.yaml cmd.yaml
 ```
 
 ## Running
@@ -110,6 +115,7 @@ Flags:
 | `--data`    | `data/`       | Directory for tier cache files |
 | `--cmd`     | `cmd.yaml`    | Path to operations file        |
 | `--out`     | `out.txt`     | Path to write the full report  |
+| `--verbose` | `False`       | Append op results into logs    |
 
 #### cmd.yaml format
 
