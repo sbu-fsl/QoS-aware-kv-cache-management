@@ -32,7 +32,7 @@ func NewEngine(cfg *config.Config, dataDir string) (*Engine, error) {
 		}
 
 		// each tier gets its own file-based storage with eviction callback to the engine
-		tier, err := storage.NewTier(tc.Name, tc.Capacity, tc.RestoreSpeed, dataDir)
+		tier, err := storage.NewTier(tc.Name, tc.Capacity, tc.RestoreSpeed, dataDir, cfg.CacheEngine.InMemoryRun)
 		if err != nil {
 			return nil, fmt.Errorf("init tier %s: %w", tc.Name, err)
 		}

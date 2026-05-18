@@ -15,9 +15,10 @@ type TierConfig struct {
 
 // CacheEngineConfig defines the configuration for the cache engine, which consists of multiple tiers.
 type CacheEngineConfig struct {
-	Tiers               []TierConfig `yaml:"tiers"`
-	RestoreMode         string       `yaml:"restore_mode"`           // "greedy" (default) or "qos"
-	MaxRecomputeBlocks  int          `yaml:"max_recompute_blocks"`   // energy-efficiency cap: max cached blocks allowed to be force-recomputed; -1 = unlimited
+	Tiers              []TierConfig `yaml:"tiers"`
+	RestoreMode        string       `yaml:"restore_mode"`            // "greedy" (default) or "qos"
+	MaxRecomputeBlocks int          `yaml:"max_recompute_blocks"`    // energy-efficiency cap: max cached blocks allowed to be force-recomputed; -1 = unlimited
+	InMemoryRun        bool         `yaml:"in_memory_run,omitempty"` // if true, operates in-memory without file persistence (for less overhead in tests)
 }
 
 // InferenceEngineConfig defines the configuration for the inference engine, including block size and compute speed.

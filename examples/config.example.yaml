@@ -3,6 +3,7 @@ inference_engine:
   compute_speed: 50.0    # blocks per second (simulated compute for a missing block)
 
 cache_engine:
+  in_memory_run: false       # if true, operates in-memory without file persistence (for less overhead in tests)
   restore_mode: "qos"        # greedy or qos
   max_recompute_blocks: -1   # cap on how many cached blocks may be force-recomputed; -1 for no cap
   tiers:

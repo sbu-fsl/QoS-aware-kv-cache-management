@@ -15,8 +15,9 @@ type Tier struct {
 	Capacity int
 	Speed    float64 // blocks per second for restore
 
-	filePath string
-	blocks   map[int]struct{} // present block IDs
+	inmemoryRun bool // if true, operates in-memory without file persistence (for less overhead in tests)
+	filePath    string
+	blocks      map[int]struct{} // present block IDs
 
 	// LRU doubly-linked list; head = most recent, tail = least recent
 	head    *LRUEntry
@@ -30,14 +31,15 @@ type tierState struct {
 }
 
 // NewTier constructs a new tier with the given parameters and loads its state from disk.
-func NewTier(name string, capacity int, speed float64, dataDir string) (*Tier, error) {
+func NewTier(name string, capacity int, speed float64, dataDir string, inmemoryRun bool) (*Tier, error) {
 	t := &Tier{
-		Name:     name,
-		Capacity: capacity,
-		Speed:    speed,
-		filePath: fmt.Sprintf("%s/%s.json", dataDir, name),
-		blocks:   make(map[int]struct{}),
-		entries:  make(map[int]*LRUEntry),
+		Name:        name,
+		Capacity:    capacity,
+		Speed:       speed,
+		filePath:    fmt.Sprintf("%s/%s.json", dataDir, name),
+		inmemoryRun: inmemoryRun,
+		blocks:      make(map[int]struct{}),
+		entries:     make(map[int]*LRUEntry),
 	}
 
 	if err := t.load(); err != nil {
@@ -49,6 +51,10 @@ func NewTier(name string, capacity int, speed float64, dataDir string) (*Tier, e
 
 // load reads the tier state from its backing file and reconstructs the in-memory structures.
 func (t *Tier) load() error {
+	if t.inmemoryRun {
+		return nil
+	}
+
 	data, err := os.ReadFile(t.filePath)
 	if os.IsNotExist(err) {
 		return nil
@@ -86,6 +92,10 @@ func (t *Tier) save() error {
 
 	for cur := t.head; cur != nil; cur = cur.next {
 		order = append(order, cur.blockID)
+	}
+
+	if t.inmemoryRun {
+		return nil
 	}
 
 	data, err := json.MarshalIndent(tierState{Order: order}, "", "  ")
@@ -224,6 +234,10 @@ func (t *Tier) Purge() error {
 	t.entries = make(map[int]*LRUEntry)
 	t.head = nil
 	t.tail = nil
+
+	if t.inmemoryRun {
+		return nil
+	}
 
 	return os.WriteFile(t.filePath, []byte(`{"order":[]}`), 0644)
 }
