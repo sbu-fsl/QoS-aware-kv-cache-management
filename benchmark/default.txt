@@ -1,0 +1,26 @@
+=== Op 1: STORE [1, 2, 3, 4, 5, 6, 7, 8, 9, ..., 100000] ===
+STORE — 100000 block(s)
+Block       Evictions
+--------------------------------------------------
+
+=== Op 2: RESTORE [90000, 90001, 90002, 90003, 90004, 90005, 90006, 90007, 90008, ..., 100000] ===
+------------------------------------------------------------
+Lane Disk:          1400200.00ms (7001 block(s))
+Lane DRAM:          145000.00ms (2900 block(s))
+Lane VRAM:          1000.00ms (100 block(s))
+Overall time:         1400200.00ms  max(parallel restore 1400200.00ms, compute 0.00µs)
+
+=== Op 3: RESTORE [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, ..., 100000] ===
+------------------------------------------------------------
+Lane Disk:          18400200.00ms (92001 block(s))
+Lane DRAM:          145000.00ms (2900 block(s))
+Lane VRAM:          1000.00ms (100 block(s))
+Overall time:         18400200.00ms  max(parallel restore 18400200.00ms, compute 0.00µs)
+
+=== Op 4: RESTORE [1, 2, 3, 4, 5, 6, 7, 8, 9, ..., 100000] ===
+------------------------------------------------------------
+Lane Disk:          19400000.00ms (97000 block(s))
+Lane DRAM:          145000.00ms (2900 block(s))
+Lane VRAM:          1000.00ms (100 block(s))
+Overall time:         19400000.00ms  max(parallel restore 19400000.00ms, compute 0.00µs)
+

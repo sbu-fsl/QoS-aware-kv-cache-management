@@ -189,7 +189,7 @@ func fmtList(ids []int) string {
 			fmt.Fprintf(&tmp, "%d, ", ids[i])
 		}
 
-		fmt.Fprintf(&tmp, "..., %d]", ids[9])
+		fmt.Fprintf(&tmp, "..., %d]", ids[len(ids)-1])
 
 		return tmp.String()
 	} else {
