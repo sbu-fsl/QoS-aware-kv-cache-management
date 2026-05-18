@@ -25,21 +25,23 @@ type AutoRunCMD struct {
 }
 
 func (c *AutoRunCMD) Command() *cobra.Command {
-	return &cobra.Command{
+	instance := &cobra.Command{
 		Use:   "autorun",
 		Short: "Automated QoS-aware KV Cache Management (CLI)",
 		Long:  "Run a sequence of cache operations defined in a cmd.yaml file for testing and demonstration.",
 		Run: func(cmd *cobra.Command, args []string) {
-			// register flags for the main function
-			c.configPath = cmd.Flags().String("config", defaultConfigPath, "path to config file")
-			c.dataDir = cmd.Flags().String("data", defaultDataDir, "directory for tier cache files")
-			c.cmdPath = cmd.Flags().String("cmd", "cmd.yaml", "path to operations file")
-			c.outPath = cmd.Flags().String("out", "out.txt", "path to output report file")
-			c.verbose = cmd.Flags().Bool("verbose", false, "enable verbose logging")
-
 			c.main()
 		},
 	}
+
+	// register flags for the main function
+	c.configPath = instance.Flags().String("config", defaultConfigPath, "path to config file")
+	c.dataDir = instance.Flags().String("data", defaultDataDir, "directory for tier cache files")
+	c.cmdPath = instance.Flags().String("cmd", defaultCmdPath, "path to operations file")
+	c.outPath = instance.Flags().String("out", defaultOutPath, "path to output report file")
+	c.verbose = instance.Flags().Bool("verbose", false, "enable verbose logging")
+
+	return instance
 }
 
 // Operation represents a single entry in cmd.yaml.

@@ -16,7 +16,11 @@ build: build-go
 
 build-go:
 	@mkdir -p $(BIN_DIR)
-	go build -o $(APP_BIN) .
+	@if [ -f $(APP_BIN) ]; then \
+		echo "$(APP_BIN) is up to date"; \
+	else \
+		go build -o $(APP_BIN) .; \
+	fi
 
 ## run: start the interactive QoS CLI
 run: build-go

@@ -22,18 +22,20 @@ type QoSCMD struct {
 }
 
 func (c *QoSCMD) Command() *cobra.Command {
-	return &cobra.Command{
+	instance := &cobra.Command{
 		Use:   "qos",
 		Short: fmt.Sprintf("QoS-aware KV Cache Management (CLI v%s)", version),
 		Long:  "Run the QoS-aware KV cache management simulator with a terminal interface for testing and demonstration.",
 		Run: func(cmd *cobra.Command, args []string) {
-			// register flags for the main function
-			c.configPath = cmd.Flags().String("config", defaultConfigPath, "path to config file")
-			c.dataDir = cmd.Flags().String("data", defaultDataDir, "directory for tier cache files")
-
 			c.main()
 		},
 	}
+
+	// register flags for the main function
+	c.configPath = instance.Flags().String("config", defaultConfigPath, "path to config file")
+	c.dataDir = instance.Flags().String("data", defaultDataDir, "directory for tier cache files")
+
+	return instance
 }
 
 func (c *QoSCMD) main() {
