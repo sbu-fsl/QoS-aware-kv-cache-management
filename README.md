@@ -1,8 +1,10 @@
 # QoS-aware KV Cache Management
 
-A simulated multi-tier KV cache system with a CLI inference engine that stores, looks up, and restores blocks across storage tiers.
+A simulated heterogeneous multi-tier KV cache system with a CLI-based inference engine that stores, looks up, and restores blocks across storage tiers.
+This project aims to replicate the real-world distribution of KV caches across storage tiers during LLM inference.
+The project supports applying QoS-aware cache management policies with two SLOs. The default SLO targets lower TTFT, resulting in reduced queue delays and lower end-to-end latency. However, by setting a cap on computed blocks, an energy-efficiency-oriented SLO can also be enforced.
 
-## Entities
+## Simulator Design
 
 ### Block
 
@@ -15,7 +17,7 @@ Storage is organized into ordered tiers. The order determines restore priority. 
 Default tiers:
 
 | Tier | Restore Speed | Capacity |
-|------|---------------|----------|
+| ---- | ------------- | -------- |
 | VRAM | 100 blk/s     | 10       |
 | DRAM | 20 blk/s      | 30       |
 | Disk | 5 blk/s       | 100      |
@@ -40,22 +42,25 @@ Tunings are read from `config.yaml` at startup. If the file is not found, built-
 
 ```yaml
 inference_engine:
-  block_size: 16        # tokens per block
-  compute_speed: 50.0    # blocks per second (cost to compute a missing block)
+  block_size: 16 # tokens per block
+  compute_speed: 50.0 # blocks per second (simulated compute for a missing block)
 
 cache_engine:
+  in_memory_run: true # if true, operates in-memory without file persistence (for less overhead in tests)
+  restore_mode: "qos" # greedy or qos
+  max_recompute_blocks: -1 # cap on how many cached blocks may be force-recomputed; -1 for no cap
   tiers:
     - name: VRAM
-      restore_speed: 100.0
-      capacity: 10
+      restore_speed: 100.0 # blocks per second
+      capacity: 10 # max blocks
 
     - name: DRAM
-      restore_speed: 20.0
-      capacity: 30
+      restore_speed: 20.0 # blocks per second
+      capacity: 30 # max blocks
 
     - name: Disk
-      restore_speed: 5.0
-      capacity: 100
+      restore_speed: 5.0 # blocks per second
+      capacity: 100 # max blocks
 ```
 
 > Tier cache state is persisted as JSON files in the `data/` directory (one file per tier), so the cache survives restarts.
@@ -64,8 +69,8 @@ cache_engine:
 
 ```sh
 make build        # compile both binaries into bin/
-make build-qos    # interactive CLI only
-make build-autorun  # batch runner only
+make run          # interactive CLI only
+make autorun      # batch runner only
 ```
 
 ## Running
@@ -76,15 +81,15 @@ make build-autorun  # batch runner only
 make run
 
 # or directly:
-go run ./cmd/qos/
+go run main.go qos
 ```
 
 Flags:
 
-| Flag      | Default       | Description                    |
-|-----------|---------------|--------------------------------|
-| `-config` | `config.yaml` | Path to config file            |
-| `-data`   | `data/`       | Directory for tier cache files |
+| Flag       | Default       | Description                    |
+| ---------- | ------------- | ------------------------------ |
+| `--config` | `config.yaml` | Path to config file            |
+| `--data`   | `data/`       | Directory for tier cache files |
 
 ### Batch Auto-Run
 
@@ -99,12 +104,12 @@ make autorun CMD_YAML=my.yaml OUT=report.txt
 
 Flags:
 
-| Flag      | Default       | Description                         |
-|-----------|---------------|-------------------------------------|
-| `-config` | `config.yaml` | Path to config file                 |
-| `-data`   | `data/`       | Directory for tier cache files      |
-| `-cmd`    | `cmd.yaml`    | Path to operations file             |
-| `-out`    | `out.txt`     | Path to write the full report       |
+| Flag        | Default       | Description                    |
+| ----------- | ------------- | ------------------------------ |
+| `---config` | `config.yaml` | Path to config file            |
+| `--data`    | `data/`       | Directory for tier cache files |
+| `--cmd`     | `cmd.yaml`    | Path to operations file        |
+| `--out`     | `out.txt`     | Path to write the full report  |
 
 #### cmd.yaml format
 
@@ -113,10 +118,10 @@ Each entry has an `op` (`store` or `restore`) and a `blocks` field. Blocks can b
 ```yaml
 operations:
   - op: store
-    blocks: "1-10"          # range: blocks 1 through 10
+    blocks: "1-10" # range: blocks 1 through 10
 
   - op: store
-    blocks: "20, 30, 40"    # comma-separated list
+    blocks: "20, 30, 40" # comma-separated list
 
   - op: restore
     blocks: "1-5"
@@ -216,20 +221,3 @@ Tier            Used/Cap    Blocks
 ### Eviction
 
 When a tier reaches capacity, the **least-recently-used** block is evicted to make room. Evictions are reported per-tier in the store output.
-
-## Project Layout
-
-```text
-cmd/
-  qos/main.go                Interactive CLI entry point
-  autorun/main.go            Batch runner (reads cmd.yaml, writes out.txt)
-internal/
-  config/config.go           YAML config loader with built-in defaults
-  storage/tier.go            Per-tier LRU cache, backed by data/<Tier>.json
-  cache/engine.go            Multi-tier store / lookup / restore logic
-  report/report.go           Human-readable report formatter
-Makefile                     Build, run, test, and autorun targets
-config.yaml                  Tuning parameters
-cmd.yaml                     Batch operations input (store/restore sequences)
-data/                        Persistent tier state (auto-created)
-```
