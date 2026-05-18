@@ -183,7 +183,15 @@ func fmtDur(d time.Duration) string {
 // format ids helper function.
 func fmtList(ids []int) string {
 	if len(ids) > 10 {
-		return fmt.Sprintf("%v...", ids[:10])
+		var tmp strings.Builder
+		tmp.WriteString("[")
+		for i := range 9 {
+			fmt.Fprintf(&tmp, "%d, ", ids[i])
+		}
+
+		fmt.Fprintf(&tmp, "..., %d]", ids[9])
+
+		return tmp.String()
 	} else {
 		return fmt.Sprintf("%v", ids)
 	}

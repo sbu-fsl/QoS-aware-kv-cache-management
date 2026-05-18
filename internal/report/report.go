@@ -95,11 +95,11 @@ func Restore(results []cache.RestoreResult, overall time.Duration, verbose bool)
 		}
 	}
 
-	fmt.Fprintf(&b, "RESTORE — %d block(s)  [from cache: %d  computed: %d]\n", len(results), restored, computed)
-	fmt.Fprintf(&b, "%-10s  %-12s  %-10s  %s\n", "Block", "Source", "Time", "Note")
-	fmt.Fprintf(&b, "%s\n", strings.Repeat("-", 60))
-
 	if verbose {
+		fmt.Fprintf(&b, "RESTORE — %d block(s)  [from cache: %d  computed: %d]\n", len(results), restored, computed)
+		fmt.Fprintf(&b, "%-10s  %-12s  %-10s  %s\n", "Block", "Source", "Time", "Note")
+		fmt.Fprintf(&b, "%s\n", strings.Repeat("-", 60))
+
 		for _, r := range results {
 			source := r.TierName
 			var note string
@@ -137,7 +137,7 @@ func Restore(results []cache.RestoreResult, overall time.Duration, verbose bool)
 	}
 
 	for tierName, d := range tierDur {
-		fmt.Fprintf(&b, "Lane %-14s %s (distribution: %d block(s))\n", tierName+":", fmtDur(d), tierCounts[tierName])
+		fmt.Fprintf(&b, "Lane %-14s %s (%d block(s))\n", tierName+":", fmtDur(d), tierCounts[tierName])
 	}
 
 	if totalCompute > 0 {
