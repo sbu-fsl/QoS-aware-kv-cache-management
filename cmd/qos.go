@@ -1,39 +1,44 @@
-package main
+package cmd
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/sbu-fsl/qos-aware-restoration/internal/cache"
 	"github.com/sbu-fsl/qos-aware-restoration/internal/config"
 	"github.com/sbu-fsl/qos-aware-restoration/internal/report"
 
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	defaultConfigPath = "config.yaml"
-	defaultDataDir    = "data"
-)
+type QoSCMD struct {
+	configPath *string
+	dataDir    *string
+}
 
-func main() {
-	// command-line flags
-	var (
-		flagCfgPath = flag.String("config", defaultConfigPath, "path to config file")
-		flagDataDir = flag.String("data", defaultDataDir, "directory for tier cache files")
-	)
+func (c *QoSCMD) Command() *cobra.Command {
+	return &cobra.Command{
+		Use:   "qos",
+		Short: fmt.Sprintf("QoS-aware KV Cache Management (CLI v%s)", version),
+		Long:  "Run the QoS-aware KV cache management simulator with a terminal interface for testing and demonstration.",
+		Run: func(cmd *cobra.Command, args []string) {
+			// register flags for the main function
+			c.configPath = cmd.Flags().String("config", defaultConfigPath, "path to config file")
+			c.dataDir = cmd.Flags().String("data", defaultDataDir, "directory for tier cache files")
 
-	// parse flags
-	flag.Parse()
+			c.main()
+		},
+	}
+}
 
+func (c *QoSCMD) main() {
 	// load configs
-	cfg, err := config.Load(*flagCfgPath)
+	cfg, err := config.Load(*c.configPath)
 	if err != nil {
 		log.Fatalf("[Err] failed loading configs: %v\n", err)
 	}
@@ -46,12 +51,12 @@ func main() {
 	fmt.Printf("Loaded config:\n%s\n", string(cfgJSON))
 
 	// ensure data directory exists
-	if err := os.MkdirAll(*flagDataDir, 0755); err != nil {
+	if err := os.MkdirAll(*c.dataDir, 0755); err != nil {
 		log.Fatalf("[Err] failed creating data directory: %v\n", err)
 	}
 
 	// convert data dir to an absolute path
-	absData, err := filepath.Abs(*flagDataDir)
+	absData, err := filepath.Abs(*c.dataDir)
 	if err != nil {
 		log.Fatalf("[Err] failed getting absolute path of data directory: %v\n", err)
 	}
@@ -151,36 +156,6 @@ func runCLI(engine *cache.Engine) {
 			fmt.Printf("unknown command %q — type 'help'\n", cmd)
 		}
 	}
-}
-
-// parseIDs accept a blockID list and converts it to a list of integers.
-func parseIDs(s string) ([]int, error) {
-	if s == "" {
-		return nil, fmt.Errorf("no block IDs provided")
-	}
-
-	parts := strings.Split(s, ",")
-
-	ids := make([]int, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-
-		id, err := strconv.Atoi(p)
-		if err != nil {
-			return nil, fmt.Errorf("invalid block ID %q", p)
-		}
-
-		ids = append(ids, id)
-	}
-
-	if len(ids) == 0 {
-		return nil, fmt.Errorf("no valid block IDs")
-	}
-
-	return ids, nil
 }
 
 // print help function.

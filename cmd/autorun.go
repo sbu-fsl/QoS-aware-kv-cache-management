@@ -1,21 +1,46 @@
-package main
+package cmd
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sbu-fsl/qos-aware-restoration/internal/cache"
 	"github.com/sbu-fsl/qos-aware-restoration/internal/config"
 	"github.com/sbu-fsl/qos-aware-restoration/internal/report"
+	"github.com/spf13/cobra"
 
 	"gopkg.in/yaml.v3"
 )
+
+type AutoRunCMD struct {
+	configPath *string
+	dataDir    *string
+	cmdPath    *string
+	outPath    *string
+	verbose    *bool
+}
+
+func (c *AutoRunCMD) Command() *cobra.Command {
+	return &cobra.Command{
+		Use:   "autorun",
+		Short: "Automated QoS-aware KV Cache Management (CLI)",
+		Long:  "Run a sequence of cache operations defined in a cmd.yaml file for testing and demonstration.",
+		Run: func(cmd *cobra.Command, args []string) {
+			// register flags for the main function
+			c.configPath = cmd.Flags().String("config", defaultConfigPath, "path to config file")
+			c.dataDir = cmd.Flags().String("data", defaultDataDir, "directory for tier cache files")
+			c.cmdPath = cmd.Flags().String("cmd", "cmd.yaml", "path to operations file")
+			c.outPath = cmd.Flags().String("out", "out.txt", "path to output report file")
+			c.verbose = cmd.Flags().Bool("verbose", false, "enable verbose logging")
+
+			c.main()
+		},
+	}
+}
 
 // Operation represents a single entry in cmd.yaml.
 type Operation struct {
@@ -28,21 +53,9 @@ type CmdFile struct {
 	Operations []Operation `yaml:"operations"`
 }
 
-func main() {
-	// command-line flags
-	var (
-		flagCfg     = flag.String("config", "config.yaml", "path to config file")
-		flagData    = flag.String("data", "data", "directory for tier cache files")
-		flagCmd     = flag.String("cmd", "cmd.yaml", "path to operations file")
-		flagOut     = flag.String("out", "out.txt", "path to output report file")
-		flagVerbose = flag.Bool("verbose", false, "enable verbose logging")
-	)
-
-	// parse flags
-	flag.Parse()
-
+func (c *AutoRunCMD) main() {
 	// load configs
-	cfg, err := config.Load(*flagCfg)
+	cfg, err := config.Load(*c.configPath)
 	if err != nil {
 		log.Fatalf("[Err] failed loading config: %v\n", err)
 	}
@@ -55,12 +68,12 @@ func main() {
 	fmt.Printf("Loaded config:\n%s\n", string(cfgJSON))
 
 	// ensure data directory exists
-	if err := os.MkdirAll(*flagData, 0755); err != nil {
+	if err := os.MkdirAll(*c.dataDir, 0755); err != nil {
 		log.Fatalf("[Err] failed creating data directory: %v\n", err)
 	}
 
 	// convert data dir to an absolute path
-	absData, err := filepath.Abs(*flagData)
+	absData, err := filepath.Abs(*c.dataDir)
 	if err != nil {
 		log.Fatalf("[Err] failed resolving data path: %v\n", err)
 	}
@@ -72,13 +85,13 @@ func main() {
 	}
 
 	// load the cmd config file
-	ops, err := loadCmdFile(*flagCmd)
+	ops, err := loadCmdFile(*c.cmdPath)
 	if err != nil {
 		log.Fatalf("[Err] failed loading cmd file: %v\n", err)
 	}
 
 	// create logs file
-	outFile, err := os.Create(*flagOut)
+	outFile, err := os.Create(*c.outPath)
 	if err != nil {
 		log.Fatalf("[Err] failed creating output file: %v\n", err)
 	}
@@ -97,7 +110,7 @@ func main() {
 		switch strings.ToLower(op.Op) {
 		case "store":
 			results := engine.Store(ids)
-			text := report.Store(results, *flagVerbose)
+			text := report.Store(results, *c.verbose)
 			fmt.Fprint(outFile, text)
 
 			// speed line to console only
@@ -105,7 +118,7 @@ func main() {
 
 		case "restore":
 			results, overall := engine.RestoreAuto(ids)
-			text := report.Restore(results, overall, *flagVerbose)
+			text := report.Restore(results, overall, *c.verbose)
 			fmt.Fprint(outFile, text)
 
 			// speed line to console only
@@ -129,7 +142,7 @@ func main() {
 		fmt.Fprintln(outFile)
 	}
 
-	fmt.Printf("\nFull report written to %s\n", *flagOut)
+	fmt.Printf("\nFull report written to %s\n", *c.outPath)
 }
 
 // loadCmdFile reads the operations from a `cmd.yaml` format file.
@@ -145,60 +158,6 @@ func loadCmdFile(path string) ([]Operation, error) {
 	}
 
 	return cf.Operations, nil
-}
-
-// parseIDs parses a block specification: comma-separated IDs or a range "N-M".
-func parseIDs(s string) ([]int, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return nil, fmt.Errorf("empty blocks field")
-	}
-
-	// range form: "N-M"
-	if idx := strings.Index(s, "-"); idx > 0 && !strings.Contains(s, ",") {
-		parts := strings.SplitN(s, "-", 2)
-
-		lo, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
-		hi, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
-
-		if err1 != nil || err2 != nil {
-			return nil, fmt.Errorf("invalid range %q", s)
-		}
-		if lo > hi {
-			return nil, fmt.Errorf("range start %d > end %d", lo, hi)
-		}
-
-		ids := make([]int, hi-lo+1)
-		for i := range ids {
-			ids[i] = lo + i
-		}
-
-		return ids, nil
-	}
-
-	// comma-separated form
-	parts := strings.Split(s, ",")
-	ids := make([]int, 0, len(parts))
-
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-
-		id, err := strconv.Atoi(p)
-		if err != nil {
-			return nil, fmt.Errorf("invalid block ID %q", p)
-		}
-
-		ids = append(ids, id)
-	}
-
-	if len(ids) == 0 {
-		return nil, fmt.Errorf("no valid block IDs in %q", s)
-	}
-
-	return ids, nil
 }
 
 // computeSpeed returns `block/sec` based on len and overall time.
