@@ -5,33 +5,38 @@ Block       Evictions
 
 === Op 2: RESTORE [99900, 99901, 99902, 99903, 99904, 99905, 99906, 99907, 99908, ..., 100000] ===
 ------------------------------------------------------------
-Lane DRAM:          50.00ms (1 block(s))
-Lane VRAM:          1000.00ms (100 block(s))
-Overall time:         1000.00ms  max(parallel restore 1000.00ms, compute 0.00µs)
+Lane VRAM:          610.00ms (61 block(s))
+Lane DRAM:          550.00ms (11 block(s))
+Sequential compute:   580.00ms  (29 block(s))
+Overall time:         610.00ms  max(parallel restore 610.00ms, compute 580.00ms)
 
 === Op 3: RESTORE [99450, 99451, 99452, 99453, 99454, 99455, 99456, 99457, 99458, ..., 100000] ===
 ------------------------------------------------------------
+Lane DRAM:          6450.00ms (129 block(s))
 Lane VRAM:          1000.00ms (100 block(s))
-Lane DRAM:          22550.00ms (451 block(s))
-Overall time:         22550.00ms  max(parallel restore 22550.00ms, compute 0.00µs)
+Sequential compute:   6440.00ms  (322 block(s))
+Overall time:         6450.00ms  max(parallel restore 6450.00ms, compute 6440.00ms)
 
 === Op 4: RESTORE [99000, 99001, 99002, 99003, 99004, 99005, 99006, 99007, 99008, ..., 100000] ===
 ------------------------------------------------------------
-Lane DRAM:          45050.00ms (901 block(s))
+Lane DRAM:          12900.00ms (258 block(s))
 Lane VRAM:          1000.00ms (100 block(s))
-Overall time:         45050.00ms  max(parallel restore 45050.00ms, compute 0.00µs)
+Sequential compute:   12860.00ms  (643 block(s))
+Overall time:         12900.00ms  max(parallel restore 12900.00ms, compute 12860.00ms)
 
 === Op 5: RESTORE [90000, 90001, 90002, 90003, 90004, 90005, 90006, 90007, 90008, ..., 100000] ===
 ------------------------------------------------------------
-Lane Disk:          1400200.00ms (7001 block(s))
+Lane Disk:          200200.00ms (1001 block(s))
 Lane DRAM:          145000.00ms (2900 block(s))
 Lane VRAM:          1000.00ms (100 block(s))
-Overall time:         1400200.00ms  max(parallel restore 1400200.00ms, compute 0.00µs)
+Sequential compute:   120000.00ms  (6000 block(s))
+Overall time:         200200.00ms  max(parallel restore 200200.00ms, compute 120000.00ms)
 
 === Op 6: RESTORE [9000, 9001, 9002, 9003, 9004, 9005, 9006, 9007, 9008, ..., 100000] ===
 ------------------------------------------------------------
-Lane Disk:          17600200.00ms (88001 block(s))
+Lane Disk:          16400200.00ms (82001 block(s))
 Lane DRAM:          145000.00ms (2900 block(s))
 Lane VRAM:          1000.00ms (100 block(s))
-Overall time:         17600200.00ms  max(parallel restore 17600200.00ms, compute 0.00µs)
+Sequential compute:   120000.00ms  (6000 block(s))
+Overall time:         16400200.00ms  max(parallel restore 16400200.00ms, compute 120000.00ms)
 

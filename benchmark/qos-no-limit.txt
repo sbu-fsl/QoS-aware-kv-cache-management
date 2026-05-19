@@ -10,14 +10,21 @@ Lane DRAM:          550.00ms (11 block(s))
 Sequential compute:   580.00ms  (29 block(s))
 Overall time:         610.00ms  max(parallel restore 610.00ms, compute 580.00ms)
 
-=== Op 3: RESTORE [99000, 99001, 99002, 99003, 99004, 99005, 99006, 99007, 99008, ..., 100000] ===
+=== Op 3: RESTORE [99450, 99451, 99452, 99453, 99454, 99455, 99456, 99457, 99458, ..., 100000] ===
+------------------------------------------------------------
+Lane DRAM:          6450.00ms (129 block(s))
+Lane VRAM:          1000.00ms (100 block(s))
+Sequential compute:   6440.00ms  (322 block(s))
+Overall time:         6450.00ms  max(parallel restore 6450.00ms, compute 6440.00ms)
+
+=== Op 4: RESTORE [99000, 99001, 99002, 99003, 99004, 99005, 99006, 99007, 99008, ..., 100000] ===
 ------------------------------------------------------------
 Lane DRAM:          12900.00ms (258 block(s))
 Lane VRAM:          1000.00ms (100 block(s))
 Sequential compute:   12860.00ms  (643 block(s))
 Overall time:         12900.00ms  max(parallel restore 12900.00ms, compute 12860.00ms)
 
-=== Op 4: RESTORE [90000, 90001, 90002, 90003, 90004, 90005, 90006, 90007, 90008, ..., 100000] ===
+=== Op 5: RESTORE [90000, 90001, 90002, 90003, 90004, 90005, 90006, 90007, 90008, ..., 100000] ===
 ------------------------------------------------------------
 Lane Disk:          80200.00ms (401 block(s))
 Lane DRAM:          145000.00ms (2900 block(s))
@@ -25,19 +32,11 @@ Lane VRAM:          1000.00ms (100 block(s))
 Sequential compute:   132000.00ms  (6600 block(s))
 Overall time:         145000.00ms  max(parallel restore 145000.00ms, compute 132000.00ms)
 
-=== Op 5: RESTORE [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, ..., 100000] ===
+=== Op 6: RESTORE [9000, 9001, 9002, 9003, 9004, 9005, 9006, 9007, 9008, ..., 100000] ===
 ------------------------------------------------------------
-Lane Disk:          1691000.00ms (8455 block(s))
+Lane Disk:          1618200.00ms (8091 block(s))
 Lane DRAM:          145000.00ms (2900 block(s))
 Lane VRAM:          1000.00ms (100 block(s))
-Sequential compute:   1670920.00ms  (83546 block(s))
-Overall time:         1691000.00ms  max(parallel restore 1691000.00ms, compute 1670920.00ms)
-
-=== Op 6: RESTORE [1, 2, 3, 4, 5, 6, 7, 8, 9, ..., 100000] ===
-------------------------------------------------------------
-Lane Disk:          1782000.00ms (8910 block(s))
-Lane DRAM:          145000.00ms (2900 block(s))
-Lane VRAM:          1000.00ms (100 block(s))
-Sequential compute:   1761800.00ms  (88090 block(s))
-Overall time:         1782000.00ms  max(parallel restore 1782000.00ms, compute 1761800.00ms)
+Sequential compute:   1598200.00ms  (79910 block(s))
+Overall time:         1618200.00ms  max(parallel restore 1618200.00ms, compute 1598200.00ms)
 
